@@ -10,7 +10,8 @@ import yt_dlp
 from moviepy.video.io.VideoFileClip import VideoFileClip
 from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
 from moviepy.video.VideoClip import TextClip
-import moviepy.video.fx.all as vfx
+from moviepy import VideoFileClip, TextClip, CompositeVideoClip
+from moviepy.video.fx.resize import resize
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 
 # Celery (Background Processing)
@@ -264,5 +265,6 @@ def display_video(filename):
 def about():
     return render_template('about.html')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
