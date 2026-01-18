@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ClipCut AI - Processing</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+        .card {
+            border-radius: 16px;
+            border: none;
+        }
+        .spinner-border {
+            width: 4rem;
+            height: 4rem;
+        }
+        #statusText {
+            font-weight: 600;
+        }
+        .progress {
+            height: 12px;
+            border-radius: 10px;
+        }
+        .step {
+            display: none;
+        }
+        .active-step {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <div class="card shadow p-5 text-center">
+
+                <h2 class="fw-bold text-danger mb-4">🎬 ClipCut AI is Working...</h2>
+
+                <div class="mb-4">
+                    <div class="spinner-border text-danger"></div>
+                </div>
+
+                <p id="statusText" class="mb-3">Starting AI pipeline...</p>
+
+                <!-- Progress Bar -->
+                <div class="progress mb-4">
+                    <div id="progressBar"
+                         class="progress-bar bg-danger progress-bar-striped progress-bar-animated"
+                         role="progressbar"
+                         style="width: 5%">
+                    </div>
+                </div>
+
+                <!-- Pipeline Steps -->
+                <div class="text-start mx-auto" style="max-width: 420px;">
+                    <div id="step1" class="step active-step">✅ Downloading / Reading Video</div>
+                    <div id="step2" class="step">🔊 Analyzing Audio Highlights</div>
+                    <div id="step3" class="step">🧠 AI Transcribing (Whisper)</div>
+                    <div id="step4" class="step">✂️ Generating Smart Clips</div>
+                    <div id="step5" class="step">🎨 Adding Animated Subtitles</div>
+                    <div id="step6" class="step">🚀 Final Rendering</div>
+                </div>
+
+                <hr>
+
+                <p class="text-muted small">
+                    Task ID: <code id="taskId">{{ task_id }}</code>
+                </p>
+
+                <a href="/" class="btn btn-outline-danger mt-3">Cancel & Go Back</a>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const taskId = "{{ task_id }}";
+    const statusText = document.getElementById("statusText");
+    const progressBar = document.getElementById("progressBar");
+
+    const steps = [
+        "step1",
+        "step2",
+        "step3",
+        "step4",
+        "step5",
+        "step6"
+    ];
+
+    let progress = 5;
+    let stepIndex = 0;
+
+    function updateStep(index) {
+        steps.forEach((s, i) => {
+            document.getElementById(s).classList.remove("active-step");
+        });
+        document.getElementById(steps[index]).classList.add("active-step");
+    }
+
+    function pollStatus() {
+        fetch(`/status/${taskId}`)
+            .then(res => res.json())
+            .then(data => {
+
+                console.log("Task status:", data);
+
+                if (data.status === "PENDING") {
+                    statusText.innerText = "Queued... waiting for worker.";
+                    progress = 10;
+                }
+                else if (data.status === "STARTED") {
+                    statusText.innerText = "Processing video...";
+                    progress = 20;
+                    updateStep(1);
+                }
+                else if (data.status === "PROGRESS") {
+                    statusText.innerText = data.message || "Processing...";
+                    progress = Math.min(progress + 5, 70);
+                }
+                else if (data.status === "SUCCESS") {
+                    statusText.innerText = "Clips ready! Redirecting...";
+                    progress = 100;
+                    progressBar.style.width = "100%";
+
+                    // Redirect to homepage with clips
+                    setTimeout(() => {
+                        window.location.href = "/";
+                    }, 1200);
+
+                    return;
+                }
+                else if (data.status === "FAILURE") {
+                    statusText.innerHTML =
+                        "<span class='text-danger'>❌ Processing failed. Check server logs.</span>";
+                    progressBar.classList.remove("bg-danger");
+                    progressBar.classList.add("bg-dark");
+                    return;
+                }
+
+                // Gradually move through steps
+                if (progress > (stepIndex + 1) * 15 && stepIndex < steps.length - 1) {
+                    stepIndex++;
+                    updateStep(stepIndex);
+                }
+
+                progressBar.style.width = progress + "%";
+
+                // Poll again after 2 seconds
+                setTimeout(pollStatus, 2000);
+            })
+            .catch(err => {
+                console.error(err);
+                statusText.innerText = "Connection error... retrying";
+                setTimeout(pollStatus, 3000);
+            });
+    }
+
+    // Start polling
+    pollStatus();
+</script>
+
+</body>
+</html>
