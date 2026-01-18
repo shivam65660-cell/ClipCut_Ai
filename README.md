@@ -1,0 +1,2 @@
+# software
+ClipCut AI
