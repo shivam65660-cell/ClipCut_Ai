@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, send_file, jsonify
 import yt_dlp
 
 from moviepy import VideoFileClip, TextClip, CompositeVideoClip
-from moviepy.video.fx.crop import crop
+from moviepy.video.fx import crop
 from moviepy.video.fx.resize import resize
 from moviepy.audio.io.AudioFileClip import AudioFileClip
 # Celery (Background Processing)
@@ -128,8 +128,9 @@ def smart_crop_9_16(clip):
 
     print(f"Cropping video: x1={x1}, x2={x2}, height={h}")
 
-    # ✅ NEW SAFE MOVIEPY CROP
+    # ✅ CORRECT MoviePy v2 crop
     return crop(clip, x1=x1, y1=0, x2=x2, y2=h)
+
 
 
 
