@@ -1,0 +1,8 @@
+uploads/
+__pycache__/
+*.pyc
+venv/
+.env
+*.mp4
+*.m4a
+*.wav
