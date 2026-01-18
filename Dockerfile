@@ -1,27 +1,27 @@
-# Use Python base image
-FROM python:3.10
+# --------- STAGE 1: Base ----------
+FROM python:3.10-slim AS base
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
+# Install only required system tools
 RUN apt-get update && apt-get install -y \
     ffmpeg \
-    imagemagick \
+    libgl1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
-COPY . .
+# --------- STAGE 2: Dependencies ----------
+COPY requirements.txt .
 
-# Install Python dependencies
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# --------- STAGE 3: Final Image ----------
+COPY . .
 
 # Create uploads folder
 RUN mkdir -p /app/uploads
 
-# Expose Flask port
 EXPOSE 5000
 
-# Start Flask app
+# Start Flask
 CMD ["python", "app.py"]

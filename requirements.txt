@@ -3,6 +3,6 @@ celery
 redis
 yt-dlp
 numpy
-opencv-python
+opencv-python-headless
 moviepy
 openai-whisper

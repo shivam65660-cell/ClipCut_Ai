@@ -32,8 +32,11 @@ celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
 # ---- LOAD WHISPER MODEL ----
-print("AI Model load ho raha hai... Please wait...")
-model = whisper.load_model("base")
+
+def get_whisper_model():
+    print("Loading Whisper model at runtime (fast mode)...")
+    return whisper.load_model("tiny", device="cpu")
+
 
 # =========================
 # HELPER FUNCTIONS
@@ -143,6 +146,9 @@ def smart_crop_9_16(clip):
 def generate_ai_clips(input_path):
     clip_filenames = []
     print("AI analyzing video for highlights...")
+
+    # Load Whisper model
+    model = get_whisper_model()
 
     # Transcribe full video
     result = model.transcribe(input_path, fp16=False)
