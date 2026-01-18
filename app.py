@@ -7,19 +7,14 @@ import numpy as np
 from flask import Flask, render_template, request, send_file, jsonify
 import yt_dlp
 
-from moviepy.video.io.VideoFileClip import VideoFileClip
-from moviepy.video.compositing.CompositeVideoClip import CompositeVideoClip
-from moviepy.video.VideoClip import TextClip
 from moviepy import VideoFileClip, TextClip, CompositeVideoClip
+from moviepy.video.fx.crop import crop
 from moviepy.video.fx.resize import resize
 from moviepy.audio.io.AudioFileClip import AudioFileClip
-
 # Celery (Background Processing)
 from celery import Celery
 
 # --- CONFIGURATION ---
-os.environ["IMAGEMAGICK_BINARY"] = r"C:\Program Files\ImageMagick-7.1.2-Q16-HDRI\magick.exe"
-os.environ["IMAGEIO_FFMPEG_EXE"] = r"C:\ffmpeg\bin\ffmpeg.exe"
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -35,7 +30,7 @@ celery.conf.update(app.config)
 # ---- LOAD WHISPER MODEL ----
 
 def get_whisper_model():
-    print("Loading Whisper model at runtime (fast mode)...")
+    print("Loading Whisper model at runtime (CPU-safe)...")
     return whisper.load_model("tiny", device="cpu")
 
 
@@ -119,25 +114,23 @@ def find_highlight_moments(video_path, result, min_len=25, max_len=45):
 # 2) MOVING FACE CROP (9:16)
 # =========================
 
-import moviepy.video.fx.all as vfx
 
 def smart_crop_9_16(clip):
     w, h = clip.size
     target_w = int(h * (9 / 16))
     target_w -= target_w % 2  # make even
 
-    # Detect face from first frame
     first_frame = clip.get_frame(0)
     face_x = get_face_center(first_frame) or (w // 2)
 
-    # Compute crop boundaries
     x1 = int(max(0, min(w - target_w, face_x - target_w // 2)))
     x2 = x1 + target_w
 
     print(f"Cropping video: x1={x1}, x2={x2}, height={h}")
 
-    # ✅ MOVIEPY-SAFE WAY (works on your version)
-    return clip.fx(vfx.crop, x1=x1, y1=0, x2=x2, y2=h)
+    # ✅ NEW SAFE MOVIEPY CROP
+    return crop(clip, x1=x1, y1=0, x2=x2, y2=h)
+
 
 
 # =========================
@@ -268,3 +261,4 @@ def about():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
